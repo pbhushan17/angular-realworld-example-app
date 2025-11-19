@@ -2,6 +2,11 @@
 
   <div class="banner">
     <div class="container">
+      <img
+        *ngIf="article.coverImageUrl"
+        [src]="article.coverImageUrl"
+        alt="Cover Image"
+        />
       <h1>{{ article.title }}</h1>
 
       <app-article-meta [article]="article">

@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormControl, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { Article, ArticlesService } from '../core';
@@ -15,6 +15,7 @@ export class EditorComponent implements OnInit {
   tagField = new FormControl();
   errors: Object = {};
   isSubmitting = false;
+  hasError = false;
 
   constructor(
     private articlesService: ArticlesService,
@@ -27,7 +28,9 @@ export class EditorComponent implements OnInit {
     this.articleForm = this.fb.group({
       title: '',
       description: '',
-      body: ''
+      body: '',
+      tagList: new FormControl([], this.arrayRequired),
+      coverImageUrl: '',
     });
 
     // Initialized tagList as empty array
@@ -54,10 +57,13 @@ export class EditorComponent implements OnInit {
 
   addTag() {
     // retrieve tag control
-    const tag = this.tagField.value;
+    const tagControl = this.articleForm.get('tagList');
+    const tag = this.tagField.value?.trim();
     // only add tag if it does not exist yet
-    if (this.article.tagList.indexOf(tag) < 0) {
+    if (tag && this.article.tagList.indexOf(tag) < 0) {
       this.article.tagList.push(tag);
+      tagControl!.setValue(this.article.tagList);
+      tagControl!.updateValueAndValidity()
     }
     // clear the input
     this.tagField.reset('');
@@ -68,7 +74,14 @@ export class EditorComponent implements OnInit {
   }
 
   submitForm() {
-    this.isSubmitting = true;
+   if (this.articleForm.invalid) {
+      this.hasError = true;
+      return;
+    } else {
+      this.hasError = false;
+    }
+
+    this.isSubmitting = true
 
     // update the model
     this.updateArticle(this.articleForm.value);
@@ -90,4 +103,12 @@ export class EditorComponent implements OnInit {
   updateArticle(values: Object) {
     Object.assign(this.article, values);
   }
+
+  arrayRequired(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    return Array.isArray(value) && value.length > 0
+    ? null
+    : { required: true };
+  }
+
 }
